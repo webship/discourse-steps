@@ -27,11 +27,12 @@ When(/^(?:I|we) go to the admin dashboard$/, async function () {
 });
 
 /**
- * The admin dashboard shows a section by its heading ("Highlights", "Reports",
- * "Site traffic", "Engagement", "Search").
+ * The admin dashboard shows a section by its heading ("Site traffic" on every
+ * release; "Highlights", "Reports", "Engagement" on the monthly releases,
+ * "Community health" on the extended support release).
  *
  * Example #1: Then the admin dashboard should show "Site traffic"
- * Example #2: Then the admin dashboard should show "Engagement"
+ * Example #2: Then the admin dashboard should show "Community health"
  * Example #3: Then the admin dashboard should show "Reports"
  * Example #4: Then the admin dashboard should show "Highlights"
  * Example #5: Then the admin dashboard should show "Search"

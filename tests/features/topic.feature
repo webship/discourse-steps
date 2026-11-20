@@ -27,15 +27,18 @@ Feature: A topic
     Then the topic should have 3 posts
     And the last post should read "A reply to the first post"
 
+  # The forum takes out of a reply a quotation of the whole post just above it (the site setting
+  # "remove full quote"), a moment after the reply is posted: the member quotes an earlier post.
   Scenario: The member quotes a post in a reply
     Given there is a topic "A topic the member quotes from" in "General" by "moderator"
+    And "administrator" replied to the topic "A topic the member quotes from" with "A reply between the first post and the one that quotes it."
     And I am a logged in user with the "member" user
     When I open the topic "A topic the member quotes from"
     And I quote post 1 in a reply
     Then the composer should show "This topic was made by the test suite"
     When I add "I agree with this, and the suite says so in a quote." to the composer
     And I submit the composer
-    Then the topic should have 2 posts
+    Then the topic should have 3 posts
     And the last post should quote "moderator"
     And the last post should read "I agree with this"
 

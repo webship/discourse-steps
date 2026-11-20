@@ -24,7 +24,7 @@ jobs:
   cucumber:
     # The forum at its current monthly release and at its extended support release, each installed the
     # official way (discourse_docker's launcher) and run as a service of a DDEV project.
-    name: discourse-steps test suite (${{ matrix.discourse }} release)
+    name: discourse-steps test suite (${{ matrix.discourse }})
     runs-on: ubuntu-latest
     timeout-minutes: 120
     strategy:

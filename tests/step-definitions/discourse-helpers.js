@@ -234,7 +234,28 @@ async function instrument(world, page) {
     const failure = r.failure();
     world.__forumFailedRequests.push({ at: Date.now(), method: r.method(), url: r.url(), error: (failure && failure.errorText) || '' });
   });
-  page.on('response', (response) => { noteMade(world, response).catch(() => {}); });
+  page.on('response', (response) => { noteMade(world, response).catch(() => {}); noteReading(world, response); });
+}
+
+/**
+ * Note the reading time the forum took (POST /topics/timings answered): the topic and the posts it
+ * counted. The forum sends it a moment after a post was on screen, often while the step that opened the
+ * topic still runs, so a later step reads what was noted.
+ */
+function noteReading(world, response) {
+  const req = response.request();
+  if (req.method() !== 'POST' || !/\/topics\/timings(\.json)?$/.test(new URL(response.url()).pathname) || response.status() >= 400) return;
+  const form = new URLSearchParams(String(req.postData() || ''));
+  const topic = form.get('topic_id');
+  if (!topic) return;
+  const posts = [...form.keys()].map((k) => (k.match(/^timings\[(\d+)\]$/) || [])[1]).filter(Boolean).map(Number);
+  world.__forumReading = world.__forumReading || [];
+  world.__forumReading.push({ topic: String(topic), posts, at: Date.now() });
+}
+
+/** The posts of a topic whose reading time the forum took in this scenario. */
+function postsRead(world, topicId) {
+  return new Set((world.__forumReading || []).filter((r) => r.topic === String(topicId)).flatMap((r) => r.posts));
 }
 
 // ---------------------------------------------------------------------------
@@ -933,13 +954,27 @@ async function addToComposer(world, text) {
   const page = world.page;
   const { kind, locator } = await editor(page);
   await locator.waitFor({ state: 'visible', timeout: 10000 });
-  await locator.click();
   if (kind === 'markdown') {
+    await locator.focus();
     await locator.evaluate((ta) => { ta.selectionStart = ta.selectionEnd = ta.value.length; });
     await page.keyboard.insertText(`\n\n${text}`);
   } else {
+    // No click in the editor: a click lands on whatever is in its middle, and a click on a quotation or
+    // an image selects that block. The caret goes to the end of the text, in the empty paragraph the
+    // editor keeps after a quotation when there is one, or in a new paragraph.
+    const endsEmpty = await locator.evaluate((el) => {
+      el.focus();
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      const last = el.lastElementChild;
+      return !!(last && last.tagName === 'P' && last.textContent.trim() === '');
+    });
     await page.keyboard.press('ControlOrMeta+End');
-    await page.keyboard.press('Enter');
+    if (!endsEmpty) await page.keyboard.press('Enter');
     await page.keyboard.insertText(text);
   }
 }
@@ -1033,6 +1068,7 @@ module.exports = {
   normal,
   open,
   openDialog,
+  postsRead,
   openMenu,
   pageSummary,
   press,
