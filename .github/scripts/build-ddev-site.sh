@@ -229,5 +229,7 @@ SITE_URL="https://${HOST}"
 if [ -n "${GITHUB_ENV:-}" ]; then
   echo "LAUNCH_URL=$SITE_URL" >> "$GITHUB_ENV"
 fi
-VERSION="$(ddev exec -s discourse "sudo -u discourse git -C /var/www/discourse describe --tags" < /dev/null | tr -d '\r' | tail -n 1)"
+# The release as the forum's code says it: a channel such as release is a moving tag, and several tags
+# point at its commit.
+VERSION="$(ddev exec -s discourse "sed -n 's/.*STRING = \"\\(.*\\)\".*/\\1/p' /var/www/discourse/lib/version.rb" < /dev/null | tr -d '\r' | head -n 1)"
 echo "Built the forum ${VERSION} at $SITE_URL (mail: https://${HOST}:8026)"
