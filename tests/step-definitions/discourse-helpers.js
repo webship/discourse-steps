@@ -783,13 +783,18 @@ async function noteMade(world, response) {
     });
     return;
   }
-  const likeAction = method === 'POST' && /^\/post_actions(\.json)?$/.test(url.pathname) && response.status() === 200 && String(req.postData() || '').includes('post_action_type_id=2');
-  if (likeAction) {
-    const id = (String(req.postData()).match(/(?:^|&)id=(\d+)/) || [])[1];
-    if (id) {
-      afterScenario(world, `like-action:${id}:${handle}`, async () => {
+  if (method === 'POST' && /^\/post_actions(\.json)?$/.test(url.pathname) && response.status() === 200) {
+    // A like or a flag, taken back as the account that made it. A flag still waiting for the staff
+    // would otherwise be agreed with when the cleanup deletes its post, and the forum would send the
+    // post's author a message that the post was removed.
+    const form = new URLSearchParams(String(req.postData() || ''));
+    const id = form.get('id');
+    const type = form.get('post_action_type_id');
+    if (id && type) {
+      afterScenario(world, `post-action:${id}:${type}:${handle}`, async () => {
         const client = await apiAs(world, handle);
-        await client.call('DELETE', `/post_actions/${id}.json?post_action_type_id=2`);
+        const res = await client.call('DELETE', `/post_actions/${id}.json?post_action_type_id=${type}`);
+        if (res.status >= 400 && res.status !== 403 && res.status !== 404) throw new Error(`DELETE /post_actions/${id}.json answered ${res.status}`);
       });
     }
   }

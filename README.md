@@ -247,9 +247,10 @@ dialog's refusal, a member without the admin menu; a flagged post in the review
 queue, kept; the dashboard, the site settings search, and the admin refused to a
 member and a new user.
 
-Every topic, reply, message, like, bookmark and draft a scenario makes is deleted
-after it, a preference and a topic's state are put back: the suite leaves the
-forum as it found it.
+Every topic, reply and message a scenario makes is deleted after it (the forum
+keeps deleted posts for its staff, as with any deletion), its likes, flags,
+bookmarks and drafts are taken back, a preference and a topic's state are put
+back: the lists, pages and inboxes of the forum are as the suite found them.
 
 Not tested: the forum's other languages (a few steps read the forum's English
 words: "Log In", "Log Out", "Save Changes", "Flag Post"), the sign-up of a new
