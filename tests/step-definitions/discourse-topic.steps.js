@@ -6,6 +6,7 @@
 const { When, Then } = require('@cucumber/cucumber');
 const { friendly } = require('webship-js/tests/step-definitions/webship');
 const h = require('./discourse-helpers');
+const { postsRead } = h;
 const { topicNamed } = require('./discourse-data.steps');
 
 /** The posts of the topic on screen: [{ number, id, username, text, classes }]. */
@@ -100,16 +101,26 @@ Then(/^(?:I|we) should be reading the topic "([^"]*)"$/, async function (title) 
 When(/^(?:I|we) read the topic$/, async function () {
   const page = this.page;
   await h.forumReady(this);
-  if (!(await page.locator('#topic-title').count())) throw h.fail(this, `The page is not a topic: ${await h.pageSummary(this)}.`, 'Open a topic first.');
+  const topicId = await page.locator('#topic-title h1[data-topic-id]').first().getAttribute('data-topic-id', { timeout: 5000 }).catch(() => null);
+  if (!topicId) throw h.fail(this, `The page is not a topic: ${await h.pageSummary(this)}.`, 'Open a topic first.');
   if (!(await h.currentUsername(this))) throw h.fail(this, 'A visitor\'s reading is not kept by the forum.', 'Log in first.');
-  const timings = page.waitForResponse((r) => r.request().method() === 'POST' && /\/topics\/timings/.test(r.url()), { timeout: h.budget(this) }).catch(() => null);
   const list = await posts(page);
-  for (const p of list) {
-    await page.locator(`.post-stream .topic-post[data-post-number="${p.number}"]`).first().evaluate((e) => e.scrollIntoView({ block: 'center' })).catch(() => {});
-    await page.waitForTimeout(150);
-  }
-  const answer = await timings;
-  if (!answer) throw h.fail(this, 'The forum did not take the reading time of the account (no POST /topics/timings answered).', 'The forum counts a post read after it was on screen for a moment; a topic the account already read sends nothing new.');
+  const last = Math.max(...list.map((p) => p.number));
+  // The forum takes the reading time of a post a moment after it was on screen, often while the step that
+  // opened the topic still ran: what it took already counts. Each post is brought to the middle of the
+  // window in turn, until the forum took the last one.
+  await h.eventually(this, async () => {
+    if (postsRead(this, topicId).has(last)) return true;
+    for (const p of list) {
+      if (postsRead(this, topicId).has(p.number)) continue;
+      await page.locator(`.post-stream .topic-post[data-post-number="${p.number}"]`).first().evaluate((e) => e.scrollIntoView({ block: 'center' })).catch(() => {});
+      await page.waitForTimeout(250);
+    }
+    return postsRead(this, topicId).has(last);
+  }, Boolean, async () => ({
+    message: `The forum did not take the reading time of post #${last} (no POST /topics/timings answered for it; it took ${h.listed([...postsRead(this, topicId)].map((n) => `#${n}`))}).`,
+    hint: 'The forum counts a post read after it was on screen for a moment, in a window that has the focus.',
+  }), h.budget(this) * 2);
   await h.forumReady(this);
 });
 
@@ -266,7 +277,9 @@ When(/^(?:I|we) reply to (?:the topic|post (\d+)) with "([^"]*)"$/, async functi
 /**
  * Quote a post of the topic on screen in a new reply, the way the forum does it:
  * the post's text is selected and its "Quote" button pressed; the composer opens
- * with the quotation in it.
+ * with the quotation in it. The step selects the first paragraph of the post. The
+ * forum takes out of a reply a quotation of the whole post just above it (the
+ * site setting "remove full quote"), a moment after the reply is posted.
  *
  * Example #1: When I quote post 2 in a reply
  * Example #2: When I quote post 1 in a reply
@@ -309,7 +322,7 @@ Then(/^(?:post (\d+)|the last post) should quote "([^"]*)"$/, async function (nu
   const username = h.usernameOf(this, who);
   await h.eventually(this, () => p.locator('.cooked aside.quote').evaluateAll((qs) => qs.map((q) => q.getAttribute('data-username') || '')), (names) => names.some((x) => h.same(x, username)), async (names) => ({
     message: `Post #${n} quotes ${names.length ? h.listed(names) : 'nobody'}, not ${username}.`,
-    hint: 'A quotation shows in a box with the name of the quoted account; the reply must keep the quotation the quote button put in the composer.',
+    hint: 'A quotation shows in a box with the name of the quoted account. The forum takes out of a reply a quotation of the whole post just above it (the site setting "remove full quote"), a moment after the reply is posted: quote an earlier post, or a part of one.',
   }), 8000);
 });
 

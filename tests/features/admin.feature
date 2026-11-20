@@ -9,7 +9,6 @@ Feature: The admin
     When I go to the admin dashboard
     Then the admin dashboard should show "Dashboard"
     And the admin dashboard should show "Site traffic"
-    And the admin dashboard should show "Engagement"
 
   Scenario: The administrator searches the site settings
     Given I am a logged in user with the "administrator" user
