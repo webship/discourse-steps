@@ -54,7 +54,7 @@ push and pull request, then the assertions that must fail; see
 ## From nothing to a green run
 
 What the machine needs: Docker, [DDEV](https://ddev.com), git, Python 3, and
-Node.js 20 or later with npm. The forum runs in containers: no Ruby, PostgreSQL
+Node.js 24 or later with npm. The forum runs in containers: no Ruby, PostgreSQL
 or Redis on the machine, no public domain and no account anywhere. A forum needs
 about 1.5 GB of free memory while it is built and about 1 GB once it runs.
 
@@ -261,7 +261,7 @@ cover it).
 
 ## Requirements
 
-- Node.js 20 or later
+- Node.js 24 or later
 - A webship-js 2.0 test project (webship-js 2.0.16 or later)
 - A Discourse forum (2026.7 or later) with accounts for the suite (an admin
   among them, for the test-content steps)
