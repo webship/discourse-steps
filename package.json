@@ -1,6 +1,6 @@
 {
   "name": "@webship-js/discourse-steps",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Cucumber step definitions for a Discourse forum, a plugin for webship-js (Playwright and Cucumber): the session; the topic lists (Latest, New, Unread, Top, Categories); a topic, read, replied to, quoted, liked, bookmarked and flagged; the composer with its preview and its draft; mentions and the notifications menu; personal messages; the quick and the full-page search with its filters; the profile and the preferences; the category and tag pages; the moderator's actions (close, pin, unlist); the admin dashboard, the site settings and the review queue.",
   "main": "tests/step-definitions/discourse-session.steps.js",
   "files": [
